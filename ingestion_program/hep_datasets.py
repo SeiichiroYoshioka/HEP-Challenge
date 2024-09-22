@@ -182,11 +182,7 @@ class Data:
         return systematics(self.__train_set, tes, jes, soft_met, ttbar_scale, diboson_scale, bkg_scale,dopostprocess=dopostprocess)
 
 
-current_path = os.path.dirname(os.path.realpath(__file__))
-parent_path = os.path.dirname(current_path)
-
-
-def Neurips2024_public_dataset():
+def Neurips2024_public_dataset(output_dir):
     """
     Downloads and extracts the Neurips 2024 public dataset.
 
@@ -198,8 +194,7 @@ def Neurips2024_public_dataset():
         FileNotFoundError: If the downloaded dataset file is not found.
         zipfile.BadZipFile: If the downloaded file is not a valid zip file.
     """
-    parent_path = os.path.dirname(os.path.realpath(__file__))
-    current_path = os.path.dirname(parent_path)
+    current_path = os.path.dirname(output_dir)
     public_data_folder_path = os.path.join(current_path, "public_data")
     public_input_data_folder_path = os.path.join(current_path, "public_data", "input_data")
     public_data_zip_path = os.path.join(current_path, "public_data.zip")
