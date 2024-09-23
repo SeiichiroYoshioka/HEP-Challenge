@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import polars as pl
 import json
 import os
 import requests
@@ -11,7 +11,6 @@ from tqdm import tqdm
 # Get the logging level from an environment variable, default to INFO
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 
-
 logging.basicConfig(
     level=getattr(
         logging, log_level, logging.INFO
@@ -20,10 +19,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-test_set_settings = None
-
-PUBLIC_DATA_URL = "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
 
 
 class Data:
@@ -46,6 +41,7 @@ class Data:
         * delete_train_set(): Deletes the train dataset.
         * get_syst_train_set(): Returns the train dataset with systematic variations.
     """
+
     def __init__(self, input_dir):
         """
         Constructs a Data object.
@@ -91,7 +87,7 @@ class Data:
             train_detailed_labels = f.read().splitlines()
 
         self.__train_set = {
-                "data": pd.read_parquet(train_data_file, engine="pyarrow"),
+                "data": pl.read_parquet(train_data_file),
                 "labels": train_labels,
                 "settings": train_settings,
                 "weights": train_weights,
@@ -100,10 +96,6 @@ class Data:
 
         del train_labels, train_settings, train_weights, train_detailed_labels
 
-        buffer = io.StringIO()
-        self.__train_set["data"].info(buf=buffer, memory_usage="deep", verbose=False)
-        info_str = "Training Data :\n" + buffer.getvalue()
-        logger.debug(info_str)
         logger.info("Train data loaded successfully")
 
     def load_test_set(self):
@@ -112,16 +104,16 @@ class Data:
 
         # read test setting
         test_set = {
-            "ztautau": pd.DataFrame(),
-            "diboson": pd.DataFrame(),
-            "ttbar": pd.DataFrame(),
-            "htautau": pd.DataFrame(),
+            "ztautau": pl.DataFrame(),
+            "diboson": pl.DataFrame(),
+            "ttbar": pl.DataFrame(),
+            "htautau": pl.DataFrame(),
         }
 
         for key in test_set.keys():
 
             test_data_path = os.path.join(test_data_dir, f"{key}_data.parquet")
-            test_set[key] = pd.read_parquet(test_data_path, engine="pyarrow")
+            test_set[key] = pl.read_parquet(test_data_path, engine="pyarrow")
 
         self.__test_set = test_set
 
@@ -132,13 +124,6 @@ class Data:
             test_settings = json.load(f)
 
         self.ground_truth_mus = test_settings["ground_truth_mus"]
-        
-        for key in self.__test_set.keys():
-            buffer = io.StringIO()
-            self.__test_set[key].info(buf=buffer, memory_usage="deep", verbose=False)
-            info_str = str(key) + ":\n" + buffer.getvalue()
-            
-            logger.debug(info_str)    
         
         logger.info("Test data loaded successfully")
 
@@ -182,7 +167,7 @@ class Data:
         return systematics(self.__train_set, tes, jes, soft_met, ttbar_scale, diboson_scale, bkg_scale,dopostprocess=dopostprocess)
 
 
-def Neurips2024_public_dataset(output_dir):
+def Neurips2024_public_dataset(output_dir, data_url=None):
     """
     Downloads and extracts the Neurips 2024 public dataset.
 
@@ -194,6 +179,10 @@ def Neurips2024_public_dataset(output_dir):
         FileNotFoundError: If the downloaded dataset file is not found.
         zipfile.BadZipFile: If the downloaded file is not a valid zip file.
     """
+    PUBLIC_DATA_URL = "https://www.codabench.org/datasets/download/b9e59d0a-4db3-4da4-b1f8-3f609d1835b2/"
+    if data_url is None:
+        data_url = PUBLIC_DATA_URL
+
     current_path = os.path.dirname(output_dir)
     public_data_folder_path = os.path.join(current_path, "public_data")
     public_input_data_folder_path = os.path.join(current_path, "public_data", "input_data")
