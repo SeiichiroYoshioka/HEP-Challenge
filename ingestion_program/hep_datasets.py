@@ -98,12 +98,6 @@ class Data:
 
         del train_labels, train_settings, train_weights, train_detailed_labels
 
-        buffer = io.StringIO()
-        self.__train_set["data"].info(buf=buffer, memory_usage="deep", verbose=False)
-        info_str = "Training Data :\n" + buffer.getvalue()
-        logger.debug(info_str)
-        logger.info("Train data loaded successfully")
-
     def load_test_set(self):
 
         test_data_dir = os.path.join(self.input_dir, "test", "data")
@@ -130,13 +124,6 @@ class Data:
             test_settings = json.load(f)
 
         self.ground_truth_mus = test_settings["ground_truth_mus"]
-        
-        for key in self.__test_set.keys():
-            buffer = io.StringIO()
-            self.__test_set[key].info(buf=buffer, memory_usage="deep", verbose=False)
-            info_str = str(key) + ":\n" + buffer.getvalue()
-            
-            logger.debug(info_str)    
         
         logger.info("Test data loaded successfully")
 
