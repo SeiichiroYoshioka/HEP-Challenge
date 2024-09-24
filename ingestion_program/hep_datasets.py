@@ -86,8 +86,10 @@ class Data:
         with open(train_detailed_labels_file) as f:
             train_detailed_labels = f.read().splitlines()
 
+        df = pl.read_parquet(train_data_file)
+        df = df.select(pl.all().shrink_dtype())
         self.__train_set = {
-                "data": pl.read_parquet(train_data_file),
+                "data": df,
                 "labels": train_labels,
                 "settings": train_settings,
                 "weights": train_weights,
@@ -96,6 +98,10 @@ class Data:
 
         del train_labels, train_settings, train_weights, train_detailed_labels
 
+        buffer = io.StringIO()
+        self.__train_set["data"].info(buf=buffer, memory_usage="deep", verbose=False)
+        info_str = "Training Data :\n" + buffer.getvalue()
+        logger.debug(info_str)
         logger.info("Train data loaded successfully")
 
     def load_test_set(self):
@@ -124,6 +130,13 @@ class Data:
             test_settings = json.load(f)
 
         self.ground_truth_mus = test_settings["ground_truth_mus"]
+        
+        for key in self.__test_set.keys():
+            buffer = io.StringIO()
+            self.__test_set[key].info(buf=buffer, memory_usage="deep", verbose=False)
+            info_str = str(key) + ":\n" + buffer.getvalue()
+            
+            logger.debug(info_str)    
         
         logger.info("Test data loaded successfully")
 
